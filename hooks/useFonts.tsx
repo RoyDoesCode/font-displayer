@@ -1,7 +1,11 @@
-import { changeDynamicFont } from "@/lib/utils";
+import { DisplayerAttributes } from "@/components/displayer";
+import { changeDynamicFont, getRandomAttributes } from "@/lib/utils";
 import { create } from "zustand";
+import JSZip from "jszip";
+import FileSaver from "file-saver";
 
 const API_KEY = "AIzaSyDAkj8hcupmG7ZKl83rz-Z0gqHiCf8vcbk";
+const IMAGES_PER_FONT = 500;
 
 type FontStyle = "regular" | "italic";
 type FontWeight = 100 | 200 | 300 | 500 | 600 | 700 | 800 | 900;
@@ -23,17 +27,28 @@ export type Font = {
 };
 
 interface useFontsStore {
-    fontIndex: number;
+    playing: boolean;
+    fontIteration: number;
     currentFont: Font | undefined;
     fonts: Font[];
+    quotes: string[];
+    attributes: DisplayerAttributes | undefined;
+    zip: Record<string, Record<string, string>>;
     fetchFonts: () => Promise<void>;
-    nextFont: () => void;
+    nextFont: () => Promise<void>;
+    play: () => void;
+    pause: () => void;
+    addToZip: (family: string, filename: string, image: string) => void;
 }
 
 const useFonts = create<useFontsStore>((set) => ({
-    fontIndex: 0,
+    playing: false,
+    fontIteration: 0,
     currentFont: undefined,
     fonts: [],
+    quotes: [],
+    attributes: undefined,
+    zip: {},
     fetchFonts: async () => {
         const fonts: Font[] = [];
         const res = await fetch(`https://www.googleapis.com/webfonts/v1/webfonts?key=${API_KEY}`);
@@ -50,23 +65,66 @@ const useFonts = create<useFontsStore>((set) => ({
                 });
             }
         }
+        console.log(fonts);
 
-        const currentFont = fonts[0];
+        const quotesRes = await fetch("https://api.quotable.io/quotes?limit=150");
+        const quotes = (await quotesRes.json()).results.map((item: any) => item.content);
+        const content = quotes[Math.floor(Math.random() * quotes.length)];
+
+        const lsFont = localStorage.getItem("currentFont");
+        const currentFont = fonts.find((item) => item.name === lsFont) ?? fonts[0];
+        const attributes = getRandomAttributes(content);
         changeDynamicFont(currentFont.file);
 
-        set({ fonts, currentFont });
+        localStorage.setItem("currentFont", currentFont.name);
+        set({ fonts, quotes, currentFont, attributes });
     },
-    nextFont: () => {
+    nextFont: async () => {
         set((state) => {
-            let newIndex = state.fontIndex + 1;
-            if (newIndex >= state.fonts.length) newIndex = 0;
+            const content = state.quotes[Math.floor(Math.random() * state.quotes.length)];
+            const attributes = getRandomAttributes(content);
 
-            const currentFont = state.fonts[newIndex];
-            changeDynamicFont(currentFont.file);
+            let iteration = state.fontIteration + 1;
+            if (iteration >= IMAGES_PER_FONT) {
+                iteration = 0;
 
-            return { fontIndex: newIndex, currentFont };
+                const currIndex = state.fonts.findIndex((item) => state.currentFont?.name === item.name);
+                const newFont = state.fonts[currIndex + 1];
+                if (!newFont || Object.keys(state.zip).length > 1) state.pause();
+
+                changeDynamicFont(newFont.file);
+                localStorage.setItem("currentFont", newFont.name);
+
+                return { fontIteration: iteration, currentFont: newFont, attributes };
+            }
+            return { fontIteration: iteration, attributes };
         });
     },
+    play: () => set({ playing: true }),
+    pause: () => {
+        const zip = new JSZip();
+
+        set((state) => {
+            for (const [family, data] of Object.entries(state.zip)) {
+                for (const fileName in data) {
+                    const image = data[fileName].split(",")[1]; // Remove the data URL prefix
+                    zip.folder(family)?.file(fileName, image, { base64: true });
+                }
+            }
+            return { playing: false, zip: {} };
+        });
+
+        zip.generateAsync({ type: "blob" })
+            .then((content) => {
+                FileSaver.saveAs(content, "images.zip");
+                console.log("images.zip written successfully");
+            })
+            .catch((err) => console.error("Error generating zip file:", err));
+    },
+    addToZip: (family, filename, image) =>
+        set(({ zip }) => ({
+            zip: { ...zip, [family]: { ...zip[family], [filename]: image } },
+        })),
 }));
 
 export default useFonts;

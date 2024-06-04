@@ -1,6 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import * as htmlToImage from "html-to-image";
+import useFonts from "@/hooks/useFonts";
 
 export interface DisplayerAttributes {
     container: {
@@ -18,8 +20,22 @@ export interface DisplayerAttributes {
 }
 
 const Displayer: React.FC<DisplayerAttributes> = ({ container, text }) => {
+    const { fontIteration, currentFont, addToZip, zip } = useFonts();
+    const screenshotArea = useRef<HTMLDivElement>(null);
+
+    const handleDownload = async () => {
+        if (!screenshotArea.current || !currentFont) return;
+
+        const image = await htmlToImage.toJpeg(screenshotArea.current);
+        addToZip(currentFont.family, `${currentFont.name}${fontIteration}.jpg`, image);
+    };
+
+    useEffect(() => {
+        handleDownload();
+    }, [fontIteration]);
+
     return (
-        <div className="relative" style={{ ...container }}>
+        <div ref={screenshotArea} className="relative" style={{ ...container }}>
             <span className="absolute" style={{ ...text, fontFamily: "DynamicFont" }}>
                 {text.content}
             </span>
