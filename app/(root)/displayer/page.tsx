@@ -13,7 +13,7 @@ const TICK_DURATION = 25;
 
 export default function DisplayerPage() {
     const router = useRouter();
-    const { playing, fetchFonts, nextFont, currentFont, fontIteration, play, pause, attributes } = useFonts();
+    const { playing, fetchFonts, nextFont, currentFont, fontIteration, play, pause, attributes, zip } = useFonts();
 
     const PlayIcon = useMemo(() => (playing ? Pause : Play), [playing]);
 
@@ -40,7 +40,7 @@ export default function DisplayerPage() {
                     <PlayIcon className="h-4 w-4" />
                 </Button>
                 <span className="text-sm">
-                    {currentFont?.name} : {fontIteration}
+                    {currentFont?.name} : {fontIteration} | Font No. {Object.keys(zip).length}
                 </span>
                 <Button variant="ghost" size="icon" onClick={() => router.push("/")}>
                     <LogOut className="h-4 w-4" />

@@ -81,7 +81,7 @@ const useFonts = create<useFontsStore>((set) => ({
     },
     nextFont: async () => {
         set((state) => {
-            if (Object.keys(state.zip).length > 100) {
+            if (Object.keys(state.zip).length > 10) {
                 downloadZip(set);
                 return {};
             }
