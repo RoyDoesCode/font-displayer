@@ -72,15 +72,20 @@ const useFonts = create<useFontsStore>((set) => ({
         const content = quotes[Math.floor(Math.random() * quotes.length)];
 
         const lsFont = localStorage.getItem("currentFont");
-        const currentFont = fonts.find((item) => item.name === lsFont) ?? fonts[0];
+        const currentFont = fonts.find((item) => item.family === lsFont) ?? fonts[0];
         const attributes = getRandomAttributes(content);
         changeDynamicFont(currentFont.file);
 
-        localStorage.setItem("currentFont", currentFont.name);
+        localStorage.setItem("currentFont", currentFont.family);
         set({ fonts, quotes, currentFont, attributes });
     },
     nextFont: async () => {
         set((state) => {
+            if (Object.keys(state.zip).length > 100) {
+                downloadZip(set);
+                return {};
+            }
+
             const content = state.quotes[Math.floor(Math.random() * state.quotes.length)];
             const attributes = getRandomAttributes(content);
 
@@ -90,10 +95,13 @@ const useFonts = create<useFontsStore>((set) => ({
 
                 const currIndex = state.fonts.findIndex((item) => state.currentFont?.name === item.name);
                 const newFont = state.fonts[currIndex + 1];
-                if (!newFont || Object.keys(state.zip).length > 1) state.pause();
+                if (!newFont) {
+                    downloadZip(set);
+                    return {};
+                }
 
                 changeDynamicFont(newFont.file);
-                localStorage.setItem("currentFont", newFont.name);
+                localStorage.setItem("currentFont", newFont.family);
 
                 return { fontIteration: iteration, currentFont: newFont, attributes };
             }
@@ -101,26 +109,7 @@ const useFonts = create<useFontsStore>((set) => ({
         });
     },
     play: () => set({ playing: true }),
-    pause: () => {
-        const zip = new JSZip();
-
-        set((state) => {
-            for (const [family, data] of Object.entries(state.zip)) {
-                for (const fileName in data) {
-                    const image = data[fileName].split(",")[1]; // Remove the data URL prefix
-                    zip.folder(family)?.file(fileName, image, { base64: true });
-                }
-            }
-            return { playing: false, zip: {} };
-        });
-
-        zip.generateAsync({ type: "blob" })
-            .then((content) => {
-                FileSaver.saveAs(content, "images.zip");
-                console.log("images.zip written successfully");
-            })
-            .catch((err) => console.error("Error generating zip file:", err));
-    },
+    pause: () => downloadZip(set),
     addToZip: (family, filename, image) =>
         set(({ zip }) => ({
             zip: { ...zip, [family]: { ...zip[family], [filename]: image } },
@@ -128,3 +117,32 @@ const useFonts = create<useFontsStore>((set) => ({
 }));
 
 export default useFonts;
+
+const downloadZip = (
+    set: (
+        partial:
+            | useFontsStore
+            | Partial<useFontsStore>
+            | ((state: useFontsStore) => useFontsStore | Partial<useFontsStore>),
+        replace?: boolean | undefined
+    ) => void
+) => {
+    const zip = new JSZip();
+
+    set((state) => {
+        for (const [family, data] of Object.entries(state.zip)) {
+            for (const fileName in data) {
+                const image = data[fileName].split(",")[1]; // Remove the data URL prefix
+                zip.folder(family)?.file(fileName, image, { base64: true });
+            }
+        }
+        return { playing: false, zip: {} };
+    });
+
+    zip.generateAsync({ type: "blob" })
+        .then((content) => {
+            FileSaver.saveAs(content, "images.zip");
+            console.log("images.zip written successfully");
+        })
+        .catch((err) => console.error("Error generating zip file:", err));
+};

@@ -2,14 +2,14 @@
 
 import { LogOut, Pause, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 
 import Displayer from "@/components/displayer";
 import { Button } from "@/components/ui/button";
 import useFonts from "@/hooks/useFonts";
 
-const TICK_DURATION = 50;
+const TICK_DURATION = 25;
 
 export default function DisplayerPage() {
     const router = useRouter();
@@ -18,7 +18,9 @@ export default function DisplayerPage() {
     const PlayIcon = useMemo(() => (playing ? Pause : Play), [playing]);
 
     useEffect(() => {
-        if (!playing) return;
+        if (!playing) {
+            return;
+        }
 
         const interval = setIntervalAsync(nextFont, TICK_DURATION);
 
