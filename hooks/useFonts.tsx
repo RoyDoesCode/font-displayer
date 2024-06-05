@@ -91,7 +91,7 @@ const useFonts = create<useFontsStore>((set) => ({
     nextFont: () => {
         set((state) => {
             if (Object.keys(state.zip).length > 10) {
-                downloadZip(set, true);
+                downloadZip(set);
                 return {};
             }
 
@@ -155,8 +155,7 @@ const downloadZip = (
                   state: useFontsStore
               ) => useFontsStore | Partial<useFontsStore>),
         replace?: boolean | undefined
-    ) => void,
-    play?: boolean
+    ) => void
 ) => {
     const zip = new JSZip();
 
@@ -175,7 +174,6 @@ const downloadZip = (
         .then((content) => {
             FileSaver.saveAs(content, "images.zip");
             console.log("images.zip written successfully");
-            if (play) set({ playing: true });
         })
         .catch((err) => console.error("Error generating zip file:", err));
 };
