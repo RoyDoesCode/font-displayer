@@ -2,7 +2,7 @@
 
 import { LogOut, Pause, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 
 import Displayer from "@/components/displayer";
@@ -13,16 +13,30 @@ const TICK_DURATION = 25;
 
 export default function DisplayerPage() {
     const router = useRouter();
-    const { playing, fetchFonts, nextFont, currentFont, fontIteration, play, pause, attributes, zip } = useFonts();
+    const {
+        playing,
+        fetchFonts,
+        nextFont,
+        currentFont,
+        fontIteration,
+        play,
+        pause,
+        attributes,
+        zip,
+        addToZip,
+    } = useFonts();
 
     const PlayIcon = useMemo(() => (playing ? Pause : Play), [playing]);
 
     useEffect(() => {
-        if (!playing) {
-            return;
-        }
+        if (!playing) return;
 
-        const interval = setIntervalAsync(nextFont, TICK_DURATION);
+        const handleUpdate = async () => {
+            await addToZip();
+            nextFont();
+        };
+
+        const interval = setIntervalAsync(handleUpdate, TICK_DURATION);
 
         return () => {
             clearIntervalAsync(interval);
@@ -36,13 +50,22 @@ export default function DisplayerPage() {
     return (
         <div className="h-screen">
             <div className="absolute flex justify-between items-center w-full p-4">
-                <Button variant="outline" size="icon" onClick={playing ? pause : play}>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={playing ? pause : play}
+                >
                     <PlayIcon className="h-4 w-4" />
                 </Button>
                 <span className="text-sm">
-                    {currentFont?.name} : {fontIteration} | Font No. {Object.keys(zip).length}
+                    {currentFont?.name} : {fontIteration} | Font No.{" "}
+                    {Object.keys(zip).length}
                 </span>
-                <Button variant="ghost" size="icon" onClick={() => router.push("/")}>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => router.push("/")}
+                >
                     <LogOut className="h-4 w-4" />
                 </Button>
             </div>

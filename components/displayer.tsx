@@ -20,23 +20,12 @@ export interface DisplayerAttributes {
 }
 
 const Displayer: React.FC<DisplayerAttributes> = ({ container, text }) => {
-    const { fontIteration, currentFont, addToZip, zip } = useFonts();
-    const screenshotArea = useRef<HTMLDivElement>(null);
-
-    const handleDownload = async () => {
-        if (!screenshotArea.current || !currentFont) return;
-
-        const image = await htmlToImage.toJpeg(screenshotArea.current);
-        addToZip(currentFont.family, `${currentFont.name}${fontIteration}.jpg`, image);
-    };
-
-    useEffect(() => {
-        handleDownload();
-    }, [fontIteration]);
-
     return (
-        <div ref={screenshotArea} className="relative" style={{ ...container }}>
-            <span className="absolute" style={{ ...text, fontFamily: "DynamicFont" }}>
+        <div id="font-displayer" className="relative" style={{ ...container }}>
+            <span
+                className="absolute"
+                style={{ ...text, fontFamily: "DynamicFont" }}
+            >
                 {text.content}
             </span>
         </div>
