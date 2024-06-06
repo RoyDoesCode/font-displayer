@@ -24,7 +24,11 @@ const Displayer: React.FC<DisplayerAttributes> = ({ container, text }) => {
         <div id="font-displayer" className="relative" style={{ ...container }}>
             <span
                 className="absolute"
-                style={{ ...text, fontFamily: "DynamicFont" }}
+                style={{
+                    ...text,
+                    fontFamily: "DynamicFont",
+                    filter: "saturate(0)",
+                }}
             >
                 {text.content}
             </span>
