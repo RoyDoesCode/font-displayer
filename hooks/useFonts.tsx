@@ -54,10 +54,8 @@ const useFonts = create<useFontsStore>((set) => ({
     zip: {},
     fetchFonts: async () => {
         const fonts: Font[] = [];
-        const res = await fetch(
-            `https://www.googleapis.com/webfonts/v1/webfonts?key=${API_KEY}`
-        );
-        const data = (await res.json()).items as FontApi[];
+        const res = await fetch(`https://www.googleapis.com/webfonts/v1/webfonts?key=${API_KEY}`);
+        const data = (await res.json()).items.reverse() as FontApi[];
 
         for (const font of data) {
             for (const variant of font.variants) {
@@ -73,17 +71,17 @@ const useFonts = create<useFontsStore>((set) => ({
         }
         console.log(fonts);
 
-        const quotesRes = await fetch(
-            "https://api.quotable.io/quotes?limit=150"
+        const promises = Array.from({ length: 14 }).map((_, i) =>
+            fetch(`https://api.quotable.io/quotes?limit=150&skip=${150 * i}`)
         );
-        const quotes = (await quotesRes.json()).results.map(
-            (item: any) => item.content
-        );
+
+        const quotesRes = await Promise.all(promises);
+        const quotesData = (await Promise.all(quotesRes.map((i) => i.json()))).flat();
+        const quotes = quotesData.map((i) => i.results.map((item: any) => item.content)).flat();
         const content = quotes[Math.floor(Math.random() * quotes.length)];
 
         const lsFont = localStorage.getItem("currentFont");
-        const currentFont =
-            fonts.find((item) => item.family === lsFont) ?? fonts[0];
+        const currentFont = fonts.find((item) => item.family === lsFont) ?? fonts[0];
         const attributes = getRandomAttributes(content);
         changeDynamicFont(currentFont.file);
 
@@ -97,21 +95,14 @@ const useFonts = create<useFontsStore>((set) => ({
                 return {};
             }
 
-            const content =
-                state.quotes[Math.floor(Math.random() * state.quotes.length)];
+            const content = state.quotes[Math.floor(Math.random() * state.quotes.length)];
             const attributes = getRandomAttributes(content);
 
             let iteration = state.fontIteration + 1;
-            if (
-                state.currentFont &&
-                iteration >=
-                    Math.ceil(IMAGES_PER_FONT / state.currentFont.variantCount)
-            ) {
+            if (state.currentFont && iteration >= Math.ceil(IMAGES_PER_FONT / state.currentFont.variantCount)) {
                 iteration = 0;
 
-                const currIndex = state.fonts.findIndex(
-                    (item) => state.currentFont?.name === item.name
-                );
+                const currIndex = state.fonts.findIndex((item) => state.currentFont?.name === item.name);
                 const newFont = state.fonts[currIndex + 1];
                 if (!newFont) {
                     downloadZip(set);
@@ -157,9 +148,7 @@ const downloadZip = (
         partial:
             | useFontsStore
             | Partial<useFontsStore>
-            | ((
-                  state: useFontsStore
-              ) => useFontsStore | Partial<useFontsStore>),
+            | ((state: useFontsStore) => useFontsStore | Partial<useFontsStore>),
         replace?: boolean | undefined
     ) => void,
     play?: boolean
