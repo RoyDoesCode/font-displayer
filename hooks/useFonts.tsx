@@ -7,7 +7,7 @@ import { DisplayerAttributes } from "@/components/displayer";
 import { changeDynamicFont, getRandomAttributes } from "@/lib/utils";
 
 const API_KEY = "AIzaSyDAkj8hcupmG7ZKl83rz-Z0gqHiCf8vcbk";
-const IMAGES_PER_FONT = 500;
+export const IMAGES_PER_FONT = 5000;
 
 type FontStyle = "regular" | "italic";
 type FontWeight = 100 | 200 | 300 | 500 | 600 | 700 | 800 | 900;
@@ -26,6 +26,7 @@ export type Font = {
     variant: FontVariant;
     file: string;
     category: string;
+    variantCount: number;
 };
 
 interface useFontsStore {
@@ -66,6 +67,7 @@ const useFonts = create<useFontsStore>((set) => ({
                     variant,
                     file: font.files[variant],
                     category: font.category,
+                    variantCount: font.variants.length,
                 });
             }
         }
@@ -90,7 +92,7 @@ const useFonts = create<useFontsStore>((set) => ({
     },
     nextFont: () => {
         set((state) => {
-            if (Object.keys(state.zip).length > 10) {
+            if (Object.keys(state.zip).length > 1) {
                 downloadZip(set, true);
                 return {};
             }
@@ -100,7 +102,11 @@ const useFonts = create<useFontsStore>((set) => ({
             const attributes = getRandomAttributes(content);
 
             let iteration = state.fontIteration + 1;
-            if (iteration >= IMAGES_PER_FONT) {
+            if (
+                state.currentFont &&
+                iteration >=
+                    Math.ceil(IMAGES_PER_FONT / state.currentFont.variantCount)
+            ) {
                 iteration = 0;
 
                 const currIndex = state.fonts.findIndex(
@@ -171,11 +177,12 @@ const downloadZip = (
         return { playing: false, zip: {} };
     });
 
-    zip.generateAsync({ type: "blob" })
-        .then((content) => {
-            FileSaver.saveAs(content, "images.zip");
-            console.log("images.zip written successfully");
-            if (play) set({ playing: true });
-        })
-        .catch((err) => console.error("Error generating zip file:", err));
+    if (zip.length > 0)
+        zip.generateAsync({ type: "blob" })
+            .then((content) => {
+                FileSaver.saveAs(content, "images.zip");
+                console.log("images.zip written successfully");
+                if (play) set({ playing: true });
+            })
+            .catch((err) => console.error("Error generating zip file:", err));
 };
