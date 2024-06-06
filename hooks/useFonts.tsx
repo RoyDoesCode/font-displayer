@@ -7,7 +7,7 @@ import { DisplayerAttributes } from "@/components/displayer";
 import { changeDynamicFont, getRandomAttributes } from "@/lib/utils";
 
 const API_KEY = "AIzaSyDAkj8hcupmG7ZKl83rz-Z0gqHiCf8vcbk";
-const IMAGES_PER_FONT = 5000;
+export const IMAGES_PER_FONT = 5000;
 
 type FontStyle = "regular" | "italic";
 type FontWeight = 100 | 200 | 300 | 500 | 600 | 700 | 800 | 900;
@@ -92,7 +92,7 @@ const useFonts = create<useFontsStore>((set) => ({
     },
     nextFont: () => {
         set((state) => {
-            if (Object.keys(state.zip).length > 5) {
+            if (Object.keys(state.zip).length > 1) {
                 downloadZip(set, true);
                 return {};
             }
@@ -104,7 +104,8 @@ const useFonts = create<useFontsStore>((set) => ({
             let iteration = state.fontIteration + 1;
             if (
                 state.currentFont &&
-                iteration >= IMAGES_PER_FONT / state.currentFont.variantCount
+                iteration >=
+                    Math.ceil(IMAGES_PER_FONT / state.currentFont.variantCount)
             ) {
                 iteration = 0;
 

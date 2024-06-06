@@ -7,7 +7,7 @@ import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 
 import Displayer from "@/components/displayer";
 import { Button } from "@/components/ui/button";
-import useFonts from "@/hooks/useFonts";
+import useFonts, { IMAGES_PER_FONT } from "@/hooks/useFonts";
 
 const TICK_DURATION = 5;
 
@@ -60,7 +60,8 @@ export default function DisplayerPage() {
                 {currentFont && (
                     <span className="text-sm capitalize">
                         {Object.keys(zip).length}. {currentFont?.name} -{" "}
-                        {fontIteration} / {5000 / currentFont?.variantCount}
+                        {fontIteration} /{" "}
+                        {Math.ceil(IMAGES_PER_FONT / currentFont?.variantCount)}
                     </span>
                 )}
                 <Button
