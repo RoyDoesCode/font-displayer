@@ -165,9 +165,11 @@ const downloadZip = (
     play?: boolean
 ) => {
     const zip = new JSZip();
+    let length = 0;
 
     set((state) => {
         if (state.currentFont) delete state.zip[state.currentFont.family];
+        length = Object.keys(state.zip).length;
         for (const [family, data] of Object.entries(state.zip)) {
             for (const fileName in data) {
                 const image = data[fileName].split(",")[1]; // Remove the data URL prefix
@@ -177,7 +179,7 @@ const downloadZip = (
         return { playing: false, zip: {} };
     });
 
-    if (zip.length > 0)
+    if (length > 0)
         zip.generateAsync({ type: "blob" })
             .then((content) => {
                 FileSaver.saveAs(content, "images.zip");
