@@ -176,11 +176,12 @@ const downloadZip = (
         return { playing: false, zip: {} };
     });
 
-    zip.generateAsync({ type: "blob" })
-        .then((content) => {
-            FileSaver.saveAs(content, "images.zip");
-            console.log("images.zip written successfully");
-            if (play) set({ playing: true });
-        })
-        .catch((err) => console.error("Error generating zip file:", err));
+    if (zip.length > 0)
+        zip.generateAsync({ type: "blob" })
+            .then((content) => {
+                FileSaver.saveAs(content, "images.zip");
+                console.log("images.zip written successfully");
+                if (play) set({ playing: true });
+            })
+            .catch((err) => console.error("Error generating zip file:", err));
 };
